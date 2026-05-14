@@ -19,8 +19,7 @@ func _ready() -> void:
 
 func _setup_scene() -> void:
 	_camera = Camera3D.new()
-	_camera.position = Vector3(0.0, 0.0, 4.0)
-	_camera.look_at(Vector3.ZERO)
+	_camera.look_at_from_position(Vector3(0.0, 0.0, 4.0), Vector3.ZERO)
 	add_child(_camera)
 
 	_world_environment = WorldEnvironment.new()
