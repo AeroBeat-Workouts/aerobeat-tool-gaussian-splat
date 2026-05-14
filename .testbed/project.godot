@@ -2,7 +2,8 @@ config_version=5
 
 [application]
 
-config/name="AeroBeat Tool Testbed"
+config/name="AeroBeat Gaussian Splat Tool Testbed"
+run/main_scene="res://scenes/splat_loader_smoke.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 
 [editor_plugins]

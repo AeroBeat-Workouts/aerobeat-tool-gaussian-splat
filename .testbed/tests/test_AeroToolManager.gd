@@ -1,14 +1,21 @@
 extends GutTest
 
-func test_tool_manager_defaults_stay_template_safe() -> void:
-	var manager := AeroToolManager.new()
-	assert_eq(AeroToolManager.VERSION, "0.0.1", "Template stub version should stay explicit")
-	assert_true(manager.is_active, "Template stub should default to active")
-	assert_false(manager._is_initialized, "Template stub should start uninitialized before setup runs")
-	manager.free()
+const SAMPLE_PLY := "res://assets/splats/demo.ply"
 
-func test_tool_manager_initialize_marks_initialized() -> void:
+func test_tool_manager_initializes_and_exposes_supported_formats() -> void:
 	var manager := AeroToolManager.new()
 	manager._initialize()
-	assert_true(manager._is_initialized, "Template stub initialize path should mark the tool initialized")
+	assert_true(manager._is_initialized, "Manager should initialize")
+	assert_true(manager.get_supported_extensions().has("ply"), "PLY should be supported")
+	assert_true(manager.get_supported_extensions().has("splat"), "Legacy .splat should be supported")
+	manager.free()
+
+func test_absolute_path_loading_builds_a_resource() -> void:
+	var manager := AeroToolManager.new()
+	manager._initialize()
+	var absolute_path := ProjectSettings.globalize_path(SAMPLE_PLY)
+	var result := manager.load_gaussian_resource_from_path(absolute_path)
+	assert_true(result.get("ok", false), result.get("message", "Expected sample PLY to load"))
+	assert_true(result.get("point_count", 0) > 0, "Loaded sample should contain points")
+	assert_true(result.get("resource", null) != null, "Resource should be returned")
 	manager.free()

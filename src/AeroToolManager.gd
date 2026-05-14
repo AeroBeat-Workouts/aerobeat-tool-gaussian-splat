@@ -1,37 +1,39 @@
-## Base template for a Tool Manager.
-##
-## This class serves as the main entry point for the tool service.
-## It is intended to be used as an Autoload (Singleton) or a static helper.
 class_name AeroToolManager
 extends Node
 
-#region SIGNALS
-## Emitted when the tool has finished initializing.
 signal initialized
-#endregion
 
-#region ENUMS & CONSTANTS
 const VERSION: String = "0.0.1"
-#endregion
+const GaussianManagerScript = preload("AeroGaussianSplatManager.gd")
 
-#region EXPORTS
 @export var is_active: bool = true
-#endregion
 
-#region PRIVATE VARIABLES
 var _is_initialized: bool = false
-#endregion
+var _gaussian_manager: AeroGaussianSplatManager
 
-#region LIFECYCLE
 func _ready() -> void:
 	_initialize()
 
 func _initialize() -> void:
 	if _is_initialized:
 		return
-	
-	# TODO: Add initialization logic here
+	_gaussian_manager = GaussianManagerScript.new()
+	add_child(_gaussian_manager)
 	_is_initialized = true
 	initialized.emit()
-	print("AeroToolManager initialized.")
-#endregion
+
+func get_supported_extensions() -> PackedStringArray:
+	_initialize()
+	return _gaussian_manager.get_supported_extensions()
+
+func load_gaussian_resource_from_path(asset_path: String) -> Dictionary:
+	_initialize()
+	return _gaussian_manager.load_gaussian_resource_from_path(asset_path)
+
+func create_splat_node_from_path(asset_path: String) -> Dictionary:
+	_initialize()
+	return _gaussian_manager.create_splat_node_from_path(asset_path)
+
+func configure_world_environment(world_environment: WorldEnvironment) -> void:
+	_initialize()
+	_gaussian_manager.configure_world_environment(world_environment)
