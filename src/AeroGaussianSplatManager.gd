@@ -30,6 +30,9 @@ const PHASE_READY := "ready"
 const STATUS_IDLE := "Idle"
 const STATUS_READING := "Reading splat file"
 const STATUS_READY := "Ready"
+const RENDER_SUPPORT_SUPPORTED := "supported"
+const RENDER_SUPPORT_EXPERIMENTAL := "experimental"
+const RENDER_SUPPORT_UNSUPPORTED := "unsupported"
 
 var _background_load_thread: Thread
 var _background_read_worker: RefCounted
@@ -46,8 +49,41 @@ var _background_completed_units: int = 0
 func get_supported_extensions() -> PackedStringArray:
 	return PackedStringArray(SUPPORTED_EXTENSIONS)
 
+func get_renderer_support_status() -> Dictionary:
+	var renderer_name := "unknown"
+	if RenderingServer.has_method("get_current_rendering_method"):
+		renderer_name = String(RenderingServer.get_current_rendering_method())
+	var rendering_device = RenderingServer.get_rendering_device()
+	var has_rendering_device := rendering_device != null
+	if not has_rendering_device:
+		return {
+			"ok": false,
+			"renderer_name": renderer_name,
+			"support_level": RENDER_SUPPORT_UNSUPPORTED,
+			"has_rendering_device": false,
+			"can_attempt_render": false,
+			"can_configure_compositor": false,
+			"message": "Gaussian splat rendering is unavailable in the current renderer path because GDGS requires a RenderingDevice-backed compositor. Switch to a RenderingDevice renderer before expecting visible splat output."
+		}
+
+	var message := "Gaussian splat loading is available, but visible rendering is still treated as experimental on the current renderer path. On the current validation slice, Forward+ / Vulkan has reproduced compositor-side crashes after successful load."
+	if renderer_name == "mobile":
+		message = "Gaussian splat loading is available on the current RenderingDevice renderer, but visible rendering should still be treated as experimental until this path is validated end-to-end."
+	return {
+		"ok": true,
+		"renderer_name": renderer_name,
+		"support_level": RENDER_SUPPORT_EXPERIMENTAL,
+		"has_rendering_device": true,
+		"can_attempt_render": true,
+		"can_configure_compositor": true,
+		"message": message
+	}
+
 func configure_world_environment(world_environment: WorldEnvironment) -> void:
 	if world_environment == null:
+		return
+	var support := get_renderer_support_status()
+	if not support.get("can_configure_compositor", false):
 		return
 	if world_environment.compositor == null:
 		world_environment.compositor = Compositor.new()

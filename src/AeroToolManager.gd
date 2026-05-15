@@ -32,6 +32,10 @@ func get_supported_extensions() -> PackedStringArray:
 	_initialize()
 	return _gaussian_manager.get_supported_extensions()
 
+func get_renderer_support_status() -> Dictionary:
+	_initialize()
+	return _gaussian_manager.get_renderer_support_status()
+
 func load_gaussian_resource_from_path(asset_path: String) -> Dictionary:
 	_initialize()
 	return _gaussian_manager.load_gaussian_resource_from_path(asset_path)

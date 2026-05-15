@@ -18,7 +18,8 @@ splat loading.
 - load `.ply`, `.compressed.ply`, `.splat`, and `.sog` files from **absolute/local paths**
 - create a `GaussianSplatNode` with an in-memory `GaussianResource`
 - start a background-threaded load via `begin_load_gaussian_resource_from_path()` or `begin_create_splat_node_from_path()` and emit `background_load_started` / `background_load_progressed` / `background_load_finished`; background loading currently supports only `.ply` and `.compressed.ply`, while `.splat` and `.sog` still use the existing synchronous path
-- configure a `WorldEnvironment` with the gdgs compositor effect
+- report renderer-path support truth via `get_renderer_support_status()` so downstream UI can avoid overclaiming visible render support
+- configure a `WorldEnvironment` with the gdgs compositor effect only when the current renderer exposes the required `RenderingDevice` path
 - report basic debug metadata such as `point_count`, `aabb`, and detected format
 
 `AeroToolManager` currently mirrors that surface so it can be used as a future
@@ -82,6 +83,13 @@ manager.begin_create_splat_node_from_path("/absolute/path/to/scene.compressed.pl
 ```
 
 Background loading is currently limited to `.ply` and `.compressed.ply`. Use the existing synchronous load/create calls for `.splat` and `.sog` assets.
+
+Renderer-path truth:
+
+- `get_renderer_support_status()` is the stable way to ask whether the current renderer path can even attempt visible splat output.
+- Renderer paths without a `RenderingDevice` backend should be treated as **unsupported for visible splat rendering**; the wrapper will not attach the gdgs compositor there.
+- Renderer paths with a `RenderingDevice` are still currently reported as **experimental** until the visible render path is validated end-to-end on that backend/hardware combination.
+- In the current validation slice, Forward+ / Vulkan has reproduced compositor-side crashes after successful load, so downstream UI should avoid claiming stable visible output there yet.
 
 Progress semantics for async loads:
 
