@@ -7,10 +7,10 @@
       "source": "symlink",
       "subfolder": "/addons/aerobeat-environment-gaussian-splat-fulfillment"
     },
-    // Shared tool/workflow contracts used by the AeroBeat-facing wrapper.
-    "aerobeat-tool-core": {
-      "url": "git@github.com:AeroBeat-Workouts/aerobeat-tool-core.git",
-      "checkout": "main",
+    // Shared environment contract package used by the AeroBeat-facing adapter wrapper.
+    "aerobeat-environment-core": {
+      "url": "../../aerobeat-environment-core",
+      "source": "symlink",
       "subfolder": "/"
     },
     // Install the pinned vendor payload at res://addons/gdgs so upstream paths stay honest.

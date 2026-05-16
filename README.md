@@ -1,16 +1,19 @@
-# AeroBeat Tool - Gaussian Splat
+# AeroBeat Environment - Gaussian Splat
 
-`aerobeat-environment-gaussian-splat` is the AeroBeat-facing runtime/tool wrapper for Gaussian
-splat loading.
+`aerobeat-environment-gaussian-splat` is the AeroBeat-facing Gaussian splat fulfillment repo.
+Its repo-root wrapper now adapts into the shared `aerobeat-environment-core` contract while the
+real reusable decode/load/build/background/compositor runtime stays in the lower fulfillment
+package.
 
 ## Boundary
 
-- This repo exposes the stable AeroBeat API from `src/` for standalone wrapper use.
-- The real reusable fulfillment runtime now also lives in the dependency-safe lower package at `addons/aerobeat-environment-gaussian-splat-fulfillment/`.
+- This repo exposes the stable AeroBeat wrapper API from `src/` for standalone use.
+- The repo-root wrapper now also exposes a contract-facing fulfillment adapter that depends on `aerobeat-environment-core` for request/result/error/config vocabulary.
+- The real reusable fulfillment runtime still lives in the dependency-safe lower package at `addons/aerobeat-environment-gaussian-splat-fulfillment/`.
 - It depends on the pinned vendor payload in `aerobeat-vendor-gdgs`.
-- Downstream product/testbed repos should talk to this repo instead of loading the
-  third-party decoders directly.
+- Downstream product/testbed repos should depend on this repo for splat-specific fulfillment instead of loading the third-party decoders directly.
 - Sibling repos that need the real splat fulfillment logic **without** wrapper-global `class_name` collisions should depend on the lower package subfolder rather than the repo root wrapper package.
+- Consumer projects that use the contract-facing adapter must also install `aerobeat-environment-core` at `res://addons/aerobeat-environment-core`.
 
 ## Current runtime surface
 
@@ -26,6 +29,14 @@ splat loading.
 
 `AeroToolManager` currently mirrors that surface so it can be used as a future
 autoload/singleton entry point without changing call sites.
+
+`AeroGaussianSplatEnvironmentFulfillment` / `AeroToolManager.fulfill_environment_request()` can:
+
+- accept either a `Dictionary` request or a typed `AeroEnvironmentRequest`
+- validate against the shared `aerobeat-environment-core` `.compressed.ply` contract
+- return a typed `AeroEnvironmentResult` on success or `AeroEnvironmentError` on failure
+- keep the loaded `node`, `resource`, `point_count`, and config payload in `result.details`
+- optionally apply JSON sidecar config and configure a provided `WorldEnvironment`
 
 ## GodotEnv development flow
 
@@ -71,6 +82,21 @@ var manager := AeroGaussianSplatManager.new()
 var result := manager.create_splat_node_from_path("/absolute/path/to/scene.ply")
 if result.ok:
     add_child(result.node)
+```
+
+Contract-facing fulfillment adapter path:
+
+```gdscript
+const AeroEnvironmentRequest := preload("res://addons/aerobeat-environment-core/src/contracts/data_types/environment_request.gd")
+
+var fulfillment := AeroGaussianSplatEnvironmentFulfillment.new()
+var result = fulfillment.fulfill(AeroEnvironmentRequest.new({
+    "request_id": "req-1",
+    "kind": "splat",
+    "asset_path": "/absolute/path/to/scene.compressed.ply"
+}))
+if result is AeroEnvironmentResult and result.ok:
+    add_child(result.details["node"])
 ```
 
 Dependency-safe lower-package path for sibling consumers:

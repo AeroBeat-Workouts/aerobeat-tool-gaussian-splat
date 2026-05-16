@@ -8,11 +8,13 @@ signal background_load_finished(result)
 
 const VERSION: String = "0.0.1"
 const GaussianManagerScript = preload("AeroGaussianSplatManager.gd")
+const GaussianFulfillmentScript = preload("AeroGaussianSplatEnvironmentFulfillment.gd")
 
 @export var is_active: bool = true
 
 var _is_initialized: bool = false
 var _gaussian_manager: AeroGaussianSplatManager
+var _gaussian_fulfillment: AeroGaussianSplatEnvironmentFulfillment
 
 func _ready() -> void:
 	_initialize()
@@ -22,6 +24,7 @@ func _initialize() -> void:
 		return
 	_gaussian_manager = GaussianManagerScript.new()
 	add_child(_gaussian_manager)
+	_gaussian_fulfillment = GaussianFulfillmentScript.new(_gaussian_manager)
 	_gaussian_manager.background_load_started.connect(func(result): background_load_started.emit(result))
 	_gaussian_manager.background_load_progressed.connect(func(result): background_load_progressed.emit(result))
 	_gaussian_manager.background_load_finished.connect(func(result): background_load_finished.emit(result))
@@ -63,3 +66,18 @@ func get_background_load_status() -> Dictionary:
 func configure_world_environment(world_environment: WorldEnvironment) -> void:
 	_initialize()
 	_gaussian_manager.configure_world_environment(world_environment)
+
+func get_environment_fulfillment() -> AeroGaussianSplatEnvironmentFulfillment:
+	_initialize()
+	return _gaussian_fulfillment
+
+func supports_environment_kind(kind: String) -> bool:
+	_initialize()
+	return _gaussian_fulfillment.supports_kind(kind)
+
+func fulfill_environment_request(request: Variant) -> Variant:
+	_initialize()
+	return _gaussian_fulfillment.fulfill(request)
+
+func fulfill(request: Variant) -> Variant:
+	return fulfill_environment_request(request)

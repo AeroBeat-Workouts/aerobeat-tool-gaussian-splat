@@ -1,7 +1,12 @@
 extends GutTest
 
 const SAMPLE_PLY := "res://assets/splats/demo.ply"
+const SAMPLE_COMPRESSED_PLY := "res://assets/splats/demo.compressed.ply"
 const LOWER_RUNTIME_SCRIPT := preload("res://addons/aerobeat-environment-gaussian-splat-fulfillment/runtime/gaussian_splat_runtime.gd")
+const FULFILLMENT_SCRIPT := preload("res://src/AeroGaussianSplatEnvironmentFulfillment.gd")
+const REQUEST_SCRIPT := preload("res://addons/aerobeat-environment-core/src/contracts/data_types/environment_request.gd")
+const RESULT_SCRIPT := preload("res://addons/aerobeat-environment-core/src/contracts/data_types/environment_result.gd")
+const ERROR_SCRIPT := preload("res://addons/aerobeat-environment-core/src/contracts/data_types/environment_error.gd")
 
 func test_tool_manager_initializes_and_exposes_supported_formats() -> void:
 	var manager := AeroToolManager.new()
@@ -27,6 +32,69 @@ func test_public_manager_matches_lower_runtime_surface() -> void:
 	add_child_autofree(lower_runtime)
 	assert_eq(public_manager.get_supported_extensions(), lower_runtime.get_supported_extensions(), "Public manager should preserve the lower runtime extension contract")
 	assert_eq(public_manager.get_renderer_support_status().get("support_level", ""), lower_runtime.get_renderer_support_status().get("support_level", ""), "Public manager should preserve the lower runtime renderer-support contract")
+
+func test_contract_fulfillment_accepts_typed_request_and_returns_typed_result() -> void:
+	var manager := AeroToolManager.new()
+	manager._initialize()
+	var request = REQUEST_SCRIPT.new({
+		"request_id": "req-splat-contract",
+		"kind": "splat",
+		"asset_path": ProjectSettings.globalize_path(SAMPLE_COMPRESSED_PLY),
+	})
+	var result = manager.fulfill_environment_request(request)
+	assert_true(result is RESULT_SCRIPT, "Contract fulfillment should return a typed environment result on success")
+	assert_true(result.ok, "Typed fulfillment result should succeed for the sample compressed ply")
+	assert_eq(result.kind, "splat")
+	assert_eq(result.format, ".compressed.ply")
+	assert_true(result.details.get("node", null) is Node3D, "Fulfillment should surface the created splat node in result.details")
+	assert_true(int(result.details.get("point_count", 0)) > 0, "Fulfillment should surface decoded point count")
+	if result.details.get("node", null) != null and is_instance_valid(result.details.get("node", null)):
+		(result.details.get("node", null) as Node).free()
+	manager.free()
+
+func test_contract_fulfillment_applies_config_and_can_configure_world_environment() -> void:
+	var manager := AeroToolManager.new()
+	manager._initialize()
+	var temp_dir := ProjectSettings.globalize_path("user://gaussian_splat_contract_tests")
+	DirAccess.make_dir_recursive_absolute(temp_dir)
+	var config_path := "%s/demo.json" % temp_dir
+	FileAccess.open(config_path, FileAccess.WRITE).store_string('{"position":[1,2,3],"rotation_degrees":{"x":0,"y":90,"z":0},"scale":[2,2,2]}')
+	var world_environment := WorldEnvironment.new()
+	var request := {
+		"request_id": "req-splat-config",
+		"kind": "splat",
+		"asset_path": ProjectSettings.globalize_path(SAMPLE_COMPRESSED_PLY),
+		"config_path": config_path,
+		"context": {"world_environment": world_environment},
+	}
+	var result = manager.fulfill(request)
+	assert_true(result is RESULT_SCRIPT, "Compat fulfill alias should still route through the typed contract adapter")
+	assert_true(result.ok, "Configured contract fulfillment should succeed")
+	assert_true(result.config_applied, "Config sidecar should be applied when present")
+	assert_eq(result.config_path, config_path)
+	var node: Variant = result.details.get("node", null)
+	assert_true(node is Node3D, "Configured fulfillment should still return a Node3D")
+	assert_eq((node as Node3D).position, Vector3(1, 2, 3))
+	assert_almost_eq((node as Node3D).rotation_degrees.y, 90.0, 0.001)
+	assert_eq((node as Node3D).scale, Vector3(2, 2, 2))
+	assert_true(result.details.get("world_environment_configured", false) in [true, false], "Fulfillment should report whether compositor configuration was attempted")
+	if result.details.get("world_environment_configured", false):
+		assert_not_null(world_environment.compositor, "World environment should receive a compositor when the current renderer supports it")
+	if node != null and is_instance_valid(node):
+		(node as Node).free()
+	world_environment.free()
+	manager.free()
+
+func test_contract_fulfillment_rejects_non_contract_formats_even_if_wrapper_supports_them() -> void:
+	var fulfillment = FULFILLMENT_SCRIPT.new()
+	var result = fulfillment.fulfill({
+		"request_id": "req-splat-bad-format",
+		"kind": "splat",
+		"asset_path": ProjectSettings.globalize_path(SAMPLE_PLY),
+	})
+	assert_true(result is ERROR_SCRIPT, "Contract fulfillment should return a typed environment error on failure")
+	assert_eq(result.error_code, "unsupported_format")
+	assert_true(result.message.contains("requires .compressed.ply"), "Contract error should explain the official splat format requirement")
 
 func test_renderer_support_status_reports_runtime_truth() -> void:
 	var manager := AeroToolManager.new()
