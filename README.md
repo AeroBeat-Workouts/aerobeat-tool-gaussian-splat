@@ -38,6 +38,14 @@ autoload/singleton entry point without changing call sites.
 - keep the loaded `node`, `resource`, `point_count`, and config payload in `result.details`
 - optionally apply JSON sidecar config and configure a provided `WorldEnvironment`
 
+`AeroGaussianSplatEnvironmentFulfillment.begin_fulfill()` / `AeroToolManager.begin_fulfill()` now add the async contract path on top of that sync surface:
+
+- they keep the existing sync `fulfill()` behavior intact for compatibility
+- they wrap lower-runtime `background_load_started` / `background_load_progressed` / `background_load_finished` dictionaries into typed operation progress/result/error updates
+- they use shared contract `status` values for cross-kind stages while preserving splat-specific detail in `phase`
+- they perform config application and optional `WorldEnvironment` compositor wiring after the background decode/build step completes
+- they do **not** overclaim the known renderer/compositor bug as solved; async plumbing is complete even though stable visible render validation is still partially blocked
+
 ## GodotEnv development flow
 
 From the repo root:
@@ -97,6 +105,24 @@ var result = fulfillment.fulfill(AeroEnvironmentRequest.new({
 }))
 if result is AeroEnvironmentResult and result.ok:
     add_child(result.details["node"])
+```
+
+Async contract-facing adapter path:
+
+```gdscript
+var operation = fulfillment.begin_fulfill(AeroEnvironmentRequest.new({
+    "request_id": "req-async-1",
+    "kind": "splat",
+    "asset_path": "/absolute/path/to/scene.compressed.ply"
+}))
+operation.progressed.connect(func(progress):
+    var snapshot := progress.to_dict()
+    print("%s / %s: %0.1f%%" % [snapshot.get("status", ""), snapshot.get("phase", ""), float(snapshot.get("progress", 0.0)) * 100.0])
+)
+operation.finished.connect(func(_op):
+    if operation.result != null and operation.result.ok:
+        add_child(operation.result.details["node"])
+)
 ```
 
 Dependency-safe lower-package path for sibling consumers:

@@ -96,6 +96,71 @@ func test_contract_fulfillment_rejects_non_contract_formats_even_if_wrapper_supp
 	assert_eq(result.error_code, "unsupported_format")
 	assert_true(result.message.contains("requires .compressed.ply"), "Contract error should explain the official splat format requirement")
 
+func test_begin_fulfill_returns_operation_and_completes_with_typed_result() -> void:
+	var manager := AeroToolManager.new()
+	add_child_autofree(manager)
+	manager._initialize()
+	var request = REQUEST_SCRIPT.new({
+		"request_id": "req-splat-async-success",
+		"kind": "splat",
+		"asset_path": ProjectSettings.globalize_path(SAMPLE_COMPRESSED_PLY),
+	})
+	var operation: Variant = manager.call("begin_fulfill", request)
+	assert_not_null(operation, "Async contract path should return an operation object")
+	assert_true(operation.has_signal("finished"), "Operation should expose a finished signal")
+	await operation.finished
+	await get_tree().process_frame
+	assert_true(operation.result is RESULT_SCRIPT, "Async operation should resolve with a typed environment result")
+	assert_true(operation.result.ok, "Async operation should succeed for the sample compressed ply")
+	var latest_progress: Variant = operation.latest_progress
+	assert_not_null(latest_progress, "Async operation should retain the final progress snapshot")
+	var progress_dict: Dictionary = latest_progress.to_dict() if latest_progress.has_method("to_dict") else {}
+	assert_eq(String(progress_dict.get("state", "")), "succeeded", "Final async progress should report a succeeded state")
+	assert_eq(String(progress_dict.get("status", "")), "ready", "Final async progress should report the ready contract status")
+	assert_eq(String(progress_dict.get("phase", "")), "ready", "Final async progress should preserve the splat-specific ready phase")
+	assert_eq(float(progress_dict.get("progress", 0.0)), 1.0, "Final async progress should report 1.0 completion")
+	var result_node: Variant = operation.result.details.get("node", null)
+	if result_node != null and is_instance_valid(result_node):
+		(result_node as Node).free()
+
+func test_begin_fulfill_wraps_sync_validation_errors_into_failed_operations() -> void:
+	var fulfillment: Variant = FULFILLMENT_SCRIPT.new()
+	var operation: Variant = fulfillment.call("begin_fulfill", {
+		"request_id": "req-splat-async-bad-format",
+		"kind": "splat",
+		"asset_path": ProjectSettings.globalize_path(SAMPLE_PLY),
+	})
+	assert_not_null(operation, "Async contract path should still return an operation for terminal validation errors")
+	assert_true(operation.has_signal("finished"), "Failed operation should expose a finished signal")
+	assert_true(operation.error is ERROR_SCRIPT, "Failed async operation should capture a typed environment error")
+	assert_eq(operation.error.error_code, "unsupported_format")
+	var latest_progress: Variant = operation.latest_progress
+	assert_not_null(latest_progress, "Failed async operation should still retain a terminal progress snapshot")
+	var progress_dict: Dictionary = latest_progress.to_dict() if latest_progress.has_method("to_dict") else {}
+	assert_eq(String(progress_dict.get("state", "")), "failed", "Failed async progress should report a failed state")
+	assert_eq(String(progress_dict.get("status", "")), "failed", "Failed async progress should report the failed contract status")
+
+func test_runtime_progress_translation_uses_contract_status_and_splat_phase() -> void:
+	var fulfillment: Variant = FULFILLMENT_SCRIPT.new()
+	var request = REQUEST_SCRIPT.new({
+		"request_id": "req-splat-progress-map",
+		"kind": "splat",
+		"asset_path": ProjectSettings.globalize_path(SAMPLE_COMPRESSED_PLY),
+	})
+	var progress: Variant = fulfillment.call("_build_contract_progress", request, {
+		"pending": true,
+		"phase": "decoding",
+		"status": "Decoding vertices (128/1024)",
+		"progress": 0.375,
+	}, 7, "running")
+	var progress_dict: Dictionary = progress.to_dict() if progress.has_method("to_dict") else {}
+	assert_eq(String(progress_dict.get("state", "")), "running", "Progress translation should mark active async work as running")
+	assert_eq(String(progress_dict.get("status", "")), "decoding", "Progress translation should use contract status vocabulary")
+	assert_eq(String(progress_dict.get("phase", "")), "decoding", "Progress translation should preserve splat-specific phase detail")
+	assert_eq(int(progress_dict.get("sequence", -1)), 7, "Progress translation should preserve ordered sequence numbers")
+	assert_eq(float(progress_dict.get("progress", 0.0)), 0.375, "Progress translation should preserve fractional progress")
+	assert_eq(String(progress_dict.get("message", "")), "Decoding vertices (128/1024)", "Progress translation should preserve runtime status text as the user-facing message")
+
 func test_renderer_support_status_reports_runtime_truth() -> void:
 	var manager := AeroToolManager.new()
 	manager._initialize()

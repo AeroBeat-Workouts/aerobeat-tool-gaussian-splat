@@ -79,5 +79,16 @@ func fulfill_environment_request(request: Variant) -> Variant:
 	_initialize()
 	return _gaussian_fulfillment.fulfill(request)
 
+func begin_fulfill_environment_request(request: Variant) -> Variant:
+	_initialize()
+	return _gaussian_fulfillment.begin_fulfill(request)
+
+func begin_fulfill(request: Variant) -> Variant:
+	return begin_fulfill_environment_request(request)
+
+func supports_async() -> bool:
+	_initialize()
+	return _gaussian_fulfillment.supports_async()
+
 func fulfill(request: Variant) -> Variant:
 	return fulfill_environment_request(request)
