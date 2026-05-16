@@ -1,6 +1,7 @@
 extends GutTest
 
 const SAMPLE_PLY := "res://assets/splats/demo.ply"
+const LOWER_RUNTIME_SCRIPT := preload("res://addons/aerobeat-tool-gaussian-splat-fulfillment/runtime/gaussian_splat_runtime.gd")
 
 func test_tool_manager_initializes_and_exposes_supported_formats() -> void:
 	var manager := AeroToolManager.new()
@@ -9,6 +10,23 @@ func test_tool_manager_initializes_and_exposes_supported_formats() -> void:
 	assert_true(manager.get_supported_extensions().has("ply"), "PLY should be supported")
 	assert_true(manager.get_supported_extensions().has("splat"), "Legacy .splat should be supported")
 	manager.free()
+
+func test_lower_runtime_is_path_loadable_and_builds_a_resource() -> void:
+	var runtime = LOWER_RUNTIME_SCRIPT.new()
+	add_child_autofree(runtime)
+	var absolute_path := ProjectSettings.globalize_path(SAMPLE_PLY)
+	var result := runtime.load_gaussian_resource_from_path(absolute_path)
+	assert_true(result.get("ok", false), result.get("message", "Expected lower runtime sample PLY to load"))
+	assert_true(result.get("point_count", 0) > 0, "Lower runtime should decode sample points")
+	assert_true(result.get("resource", null) != null, "Lower runtime should return a resource")
+
+func test_public_manager_matches_lower_runtime_surface() -> void:
+	var public_manager := AeroGaussianSplatManager.new()
+	var lower_runtime = LOWER_RUNTIME_SCRIPT.new()
+	add_child_autofree(public_manager)
+	add_child_autofree(lower_runtime)
+	assert_eq(public_manager.get_supported_extensions(), lower_runtime.get_supported_extensions(), "Public manager should preserve the lower runtime extension contract")
+	assert_eq(public_manager.get_renderer_support_status().get("support_level", ""), lower_runtime.get_renderer_support_status().get("support_level", ""), "Public manager should preserve the lower runtime renderer-support contract")
 
 func test_renderer_support_status_reports_runtime_truth() -> void:
 	var manager := AeroToolManager.new()

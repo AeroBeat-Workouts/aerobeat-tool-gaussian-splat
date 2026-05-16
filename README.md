@@ -5,10 +5,12 @@ splat loading.
 
 ## Boundary
 
-- This repo exposes the stable AeroBeat API from `src/`.
+- This repo exposes the stable AeroBeat API from `src/` for standalone wrapper use.
+- The real reusable fulfillment runtime now also lives in the dependency-safe lower package at `addons/aerobeat-tool-gaussian-splat-fulfillment/`.
 - It depends on the pinned vendor payload in `aerobeat-vendor-gdgs`.
 - Downstream product/testbed repos should talk to this repo instead of loading the
   third-party decoders directly.
+- Sibling repos that need the real splat fulfillment logic **without** wrapper-global `class_name` collisions should depend on the lower package subfolder rather than the repo root wrapper package.
 
 ## Current runtime surface
 
@@ -62,9 +64,22 @@ known-clean state.
 
 ## Runtime use
 
+Standalone/public wrapper path:
+
 ```gdscript
 var manager := AeroGaussianSplatManager.new()
 var result := manager.create_splat_node_from_path("/absolute/path/to/scene.ply")
+if result.ok:
+    add_child(result.node)
+```
+
+Dependency-safe lower-package path for sibling consumers:
+
+```gdscript
+const GaussianSplatRuntime := preload("res://addons/aerobeat-tool-gaussian-splat-fulfillment/runtime/gaussian_splat_runtime.gd")
+
+var runtime = GaussianSplatRuntime.new()
+var result := runtime.create_splat_node_from_path("/absolute/path/to/scene.ply")
 if result.ok:
     add_child(result.node)
 ```
