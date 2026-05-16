@@ -1,7 +1,7 @@
 extends GutTest
 
 const SAMPLE_PLY := "res://assets/splats/demo.ply"
-const LOWER_RUNTIME_SCRIPT := preload("res://addons/aerobeat-tool-gaussian-splat-fulfillment/runtime/gaussian_splat_runtime.gd")
+const LOWER_RUNTIME_SCRIPT := preload("res://addons/aerobeat-environment-gaussian-splat-fulfillment/runtime/gaussian_splat_runtime.gd")
 
 func test_tool_manager_initializes_and_exposes_supported_formats() -> void:
 	var manager := AeroToolManager.new()

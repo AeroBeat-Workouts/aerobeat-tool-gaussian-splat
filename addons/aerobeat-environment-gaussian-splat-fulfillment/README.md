@@ -1,6 +1,6 @@
 # AeroBeat Gaussian Splat Fulfillment Package
 
-This subfolder is the dependency-safe lower runtime package for `aerobeat-tool-gaussian-splat`.
+This subfolder is the dependency-safe lower runtime package for `aerobeat-environment-gaussian-splat`.
 
 ## Why it exists
 
@@ -19,10 +19,10 @@ This lower package keeps the reusable runtime path-loadable instead:
 
 Point downstream consumers at this repo's subfolder:
 
-- `subfolder: "/addons/aerobeat-tool-gaussian-splat-fulfillment"`
+- `subfolder: "/addons/aerobeat-environment-gaussian-splat-fulfillment"`
 
 Then preload the runtime by path:
 
 ```gdscript
-const GaussianSplatRuntime := preload("res://addons/aerobeat-tool-gaussian-splat-fulfillment/runtime/gaussian_splat_runtime.gd")
+const GaussianSplatRuntime := preload("res://addons/aerobeat-environment-gaussian-splat-fulfillment/runtime/gaussian_splat_runtime.gd")
 ```

@@ -10,8 +10,8 @@ const GAUSSIAN_SPLAT_NODE_SCRIPT := preload("res://addons/gdgs/runtime/nodes/gau
 const GAUSSIAN_RESOURCE_SCRIPT := preload("res://addons/gdgs/runtime/resources/gaussian_resource.gd")
 const BINARY_PLY_READER := preload("res://addons/gdgs/importers/parsers/binary_ply_reader.gd")
 const GAUSSIAN_RESOURCE_BUILDER := preload("res://addons/gdgs/importers/builders/gaussian_resource_builder.gd")
-const BACKGROUND_LOADER_SCRIPT := preload("res://addons/aerobeat-tool-gaussian-splat-fulfillment/runtime/gaussian_splat_background_loader.gd")
-const BACKGROUND_READ_WORKER_SCRIPT := preload("res://addons/aerobeat-tool-gaussian-splat-fulfillment/runtime/gaussian_splat_background_read_worker.gd")
+const BACKGROUND_LOADER_SCRIPT := preload("res://addons/aerobeat-environment-gaussian-splat-fulfillment/runtime/gaussian_splat_background_loader.gd")
+const BACKGROUND_READ_WORKER_SCRIPT := preload("res://addons/aerobeat-environment-gaussian-splat-fulfillment/runtime/gaussian_splat_background_read_worker.gd")
 
 const SUPPORTED_EXTENSIONS := ["ply", "compressed.ply", "splat", "sog"]
 const REQUEST_KIND_RESOURCE := "resource"

@@ -1,12 +1,12 @@
 # AeroBeat Tool - Gaussian Splat
 
-`aerobeat-tool-gaussian-splat` is the AeroBeat-facing runtime/tool wrapper for Gaussian
+`aerobeat-environment-gaussian-splat` is the AeroBeat-facing runtime/tool wrapper for Gaussian
 splat loading.
 
 ## Boundary
 
 - This repo exposes the stable AeroBeat API from `src/` for standalone wrapper use.
-- The real reusable fulfillment runtime now also lives in the dependency-safe lower package at `addons/aerobeat-tool-gaussian-splat-fulfillment/`.
+- The real reusable fulfillment runtime now also lives in the dependency-safe lower package at `addons/aerobeat-environment-gaussian-splat-fulfillment/`.
 - It depends on the pinned vendor payload in `aerobeat-vendor-gdgs`.
 - Downstream product/testbed repos should talk to this repo instead of loading the
   third-party decoders directly.
@@ -76,7 +76,7 @@ if result.ok:
 Dependency-safe lower-package path for sibling consumers:
 
 ```gdscript
-const GaussianSplatRuntime := preload("res://addons/aerobeat-tool-gaussian-splat-fulfillment/runtime/gaussian_splat_runtime.gd")
+const GaussianSplatRuntime := preload("res://addons/aerobeat-environment-gaussian-splat-fulfillment/runtime/gaussian_splat_runtime.gd")
 
 var runtime = GaussianSplatRuntime.new()
 var result := runtime.create_splat_node_from_path("/absolute/path/to/scene.ply")

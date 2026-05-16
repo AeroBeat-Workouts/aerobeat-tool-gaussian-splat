@@ -2,10 +2,10 @@
   "$schema": "https://chickensoft.games/schemas/addons.schema.json",
   "addons": {
     // Install the repo-local lower fulfillment package exactly how downstream consumers should target it.
-    "aerobeat-tool-gaussian-splat-fulfillment": {
+    "aerobeat-environment-gaussian-splat-fulfillment": {
       "url": "..",
       "source": "symlink",
-      "subfolder": "/addons/aerobeat-tool-gaussian-splat-fulfillment"
+      "subfolder": "/addons/aerobeat-environment-gaussian-splat-fulfillment"
     },
     // Shared tool/workflow contracts used by the AeroBeat-facing wrapper.
     "aerobeat-tool-core": {
